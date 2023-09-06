@@ -41,7 +41,6 @@ module.exports = {
       });
 
       let spellEmbed = new EmbedBuilder()
-      console.log(spellList.length);
       if (spellList.length == 5) {
         spellEmbed
           .setColor(0x0099FF)
