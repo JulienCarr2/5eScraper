@@ -1,8 +1,7 @@
 import { REST, Routes } from 'discord.js';
 import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import * as spell from './commands/lookup/spell.js';
+import * as spell from './commands/spell.js';
+import * as listSpells from './commands/list-spells.js';
 
 // JSON parsing
 const config = JSON.parse(fs.readFileSync('./config.json'));
@@ -12,6 +11,7 @@ const clientId = config.clientId;
 
 const commands = [];
 commands.push(spell.data.toJSON());
+commands.push(listSpells.data.toJSON());
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
