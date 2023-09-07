@@ -9,7 +9,7 @@
  */
 
 // Import the dependencies.
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js'); // SlashCommandBuilder to easily create slash commands with discord.js
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } = require('discord.js'); // SlashCommandBuilder to easily create slash commands with discord.js
 const cheerio = require('cheerio'); // Cheerio to select the <p> tags wanted to scrape the page for the description of the spell.
 const axios = require('axios'); // Axios to send a get request tot eh server to get the webpage back.
 
@@ -77,9 +77,26 @@ module.exports = {
       }
 
       /**
+       * Spell List Links
+       */
+
+      let classLinks = [];
+      spellList.at(-1).split(". ")[1].split(", ").forEach((element, index) =>
+        classLinks.push(new ButtonBuilder()
+          .setLabel(element)
+          .setURL('https://dnd5e.wikidot.com/spells:' + element)
+          .setStyle(ButtonStyle.Link)
+        ));
+
+      const row = new ActionRowBuilder().addComponents(classLinks);
+
+      /**
        * Response Formation
        */
-      await interaction.reply({ embeds: [spellEmbed] }); // Have the bot reply with the formed message.
+      await interaction.reply({
+        embeds: [spellEmbed],
+        components: [row],
+      });
     } catch (e) {
       const errorEmbed = new EmbedBuilder()
         .setColor(0xFF0000)
