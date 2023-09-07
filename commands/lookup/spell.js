@@ -9,100 +9,35 @@
  */
 
 // Import the dependencies.
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } = require('discord.js'); // SlashCommandBuilder to easily create slash commands with discord.js
-const cheerio = require('cheerio'); // Cheerio to select the <p> tags wanted to scrape the page for the description of the spell.
-const axios = require('axios'); // Axios to send a get request tot eh server to get the webpage back.
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js'; // SlashCommandBuilder to easily create slash commands with discord.js
+import * as helper from "../../helper/spells.js";
 
-module.exports = {
-  // Description of spell
-  data: new SlashCommandBuilder()
-    .setName('spell')
-    .setDescription('Fetches the spell information from wikidot')
-    .addStringOption(option =>
-      option.setName('spell-name')
-        .setDescription('The spell name to lookup')
-        .setRequired(true)),
-  // Run the command
-  async execute(interaction) {
-    const param = interaction.options.getString('spell-name'); // Get the parameter and save it
-    let spell = param.toLowerCase().replaceAll(" ", "-").replaceAll(/[^a-z-]/g, "");
+export const data = new SlashCommandBuilder()
+  .setName('spell')
+  .setDescription('Fetches the spell information from wikidot')
+  .addStringOption(option => option.setName('spell-name')
+    .setDescription('The spell name to lookup')
+    .setRequired(true));
+
+export async function execute(interaction) {
+  /**
+   * Scraping below with Cheerio and Axios.
+   */
+  try {
+    let [spellEmbed, linkRow] = await helper.buildSpell(interaction.options.getString('spell-name')); // Get the parameter and save it
     /**
-     * Scraping below with Cheerio and Axios.
+     * Response Formation
      */
-    const lookup = "https://dnd5e.wikidot.com/spell:" + spell + "/"; // The URL of the spell
-    try {
-      const response = await axios.get(lookup); // The response from the server
-      const $ = cheerio.load(response.data); // Load the webpage into Cheerio
-      const header = $('div.page-title.page-header span').text(); // Grab the header of the document, to ensure proper capitalization of the spell
-      let $pc = $('div p'); // Target the <p> tags we are looking for.
-      let spellList = []; // Initialize an empty array
-      $pc.each((index, element) => {
-        spellList[index] = $(element).text(); // Load each element's text into the array
-      });
-
-      let spellEmbed = new EmbedBuilder()
-      if (spellList.at(-2).search("At Higher Levels.") !== -1) {
-        spellEmbed
-          .setColor(0x0099FF)
-          .setTitle(header)
-          .setURL(lookup)
-          .setDescription(spellList[0])
-          .addFields(
-            { name: 'Type', value: spellList[1] },
-            { name: 'Casting Time', value: spellList[2].split("\n")[0].split(": ")[1], inline: true },
-            { name: 'Range', value: spellList[2].split("\n")[1].split(": ")[1], inline: true },
-            { name: 'Components', value: spellList[2].split("\n")[2].split(": ")[1], inline: true },
-            { name: 'Duration', value: spellList[2].split("\n")[3].split(": ")[1], inline: true },
-            { name: 'Brief Description', value: spellList[3] },
-            { name: 'At Higher Levels', value: spellList.at(-2).replace("At Higher Levels. ", "") },
-          )
-          .setTimestamp()
-          .setFooter({ text: spellList.at(-1).split(". ")[1] });
-      } else {
-        spellEmbed
-          .setColor(0x0099FF)
-          .setTitle(header)
-          .setURL(lookup)
-          .setDescription(spellList[0])
-          .addFields(
-            { name: 'Type', value: spellList[1] },
-            { name: 'Casting Time', value: spellList[2].split("\n")[0].split(": ")[1], inline: true },
-            { name: 'Range', value: spellList[2].split("\n")[1].split(": ")[1], inline: true },
-            { name: 'Components', value: spellList[2].split("\n")[2].split(": ")[1], inline: true },
-            { name: 'Duration', value: spellList[2].split("\n")[3].split(": ")[1], inline: true },
-            { name: 'Brief Description', value: spellList[3] },
-          )
-          .setTimestamp()
-          .setFooter({ text: spellList.at(-1).split(". ")[1] });
-      }
-
-      /**
-       * Spell List Links
-       */
-
-      let classLinks = [];
-      spellList.at(-1).split(". ")[1].split(", ").forEach((element, index) =>
-        classLinks.push(new ButtonBuilder()
-          .setLabel(element)
-          .setURL('https://dnd5e.wikidot.com/spells:' + element)
-          .setStyle(ButtonStyle.Link)
-        ));
-
-      const row = new ActionRowBuilder().addComponents(classLinks);
-
-      /**
-       * Response Formation
-       */
-      await interaction.reply({
-        embeds: [spellEmbed],
-        components: [row],
-      });
-    } catch (e) {
-      const errorEmbed = new EmbedBuilder()
-        .setColor(0xFF0000)
-        .setTitle('Error')
-        .setDescription('The spell you are looking for cannot be found! Please try again!')
-      await interaction.reply({ embeds: [errorEmbed] });
-    }
-  },
-};
+    await interaction.reply({
+      embeds: [spellEmbed],
+      components: [linkRow],
+    });
+  } catch (e) {
+    console.error(e);
+    const errorEmbed = new EmbedBuilder()
+      .setColor(16711680)
+      .setTitle('Error')
+      .setDescription('The spell you are looking for cannot be found! Please try again!');
+    await interaction.reply({ embeds: [errorEmbed] });
+  }
+}

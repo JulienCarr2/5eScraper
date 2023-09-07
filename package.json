@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "A webscraper using axios get requests to grab spell info from the DND wikidot wiki.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node deploy-commands.js && node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js"
   },
   "author": "Paxolotl",
   "license": "MIT",
